@@ -18,15 +18,14 @@ package com.github.frapontillo.pulse.crowd.tokenize.opennlp;
 
 import com.github.frapontillo.pulse.crowd.data.entity.Message;
 import com.github.frapontillo.pulse.crowd.data.entity.Token;
-import com.github.frapontillo.pulse.crowd.tokenize.ITokenizerOperator;
+import com.github.frapontillo.pulse.crowd.tokenize.ITokenizer;
+import com.github.frapontillo.pulse.crowd.tokenize.TokenizerConfig;
 import com.github.frapontillo.pulse.spi.IPlugin;
-import com.github.frapontillo.pulse.spi.VoidConfig;
 import com.github.frapontillo.pulse.util.PulseLogger;
 import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import org.apache.logging.log4j.Logger;
-import rx.Observable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +35,7 @@ import java.util.stream.Collectors;
 /**
  * @author Francesco Pontillo
  */
-public class OpenNLPTokenizer extends IPlugin<Message, Message, VoidConfig> {
+public class OpenNLPTokenizer extends ITokenizer {
     public final static String PLUGIN_NAME = "tokenizer-opennlp";
     private Logger logger = PulseLogger.getLogger(OpenNLPTokenizer.class);
     private Map<String, Tokenizer> tokenizers;
@@ -51,25 +50,17 @@ public class OpenNLPTokenizer extends IPlugin<Message, Message, VoidConfig> {
         return PLUGIN_NAME;
     }
 
-    @Override public IPlugin<Message, Message, VoidConfig> getInstance() {
+    @Override public IPlugin<Message, Message, TokenizerConfig> getInstance() {
         return new OpenNLPTokenizer();
     }
 
-    @Override public VoidConfig getNewParameter() {
-        return new VoidConfig();
-    }
-
-    @Override protected Observable.Operator<Message, Message> getOperator(VoidConfig parameters) {
-        return new ITokenizerOperator(this) {
-            @Override public List<Token> getTokens(Message message) {
-                Tokenizer tokenizer = getTokenizer(message.getLanguage());
-                if (tokenizer == null) {
-                    return null;
-                }
-                List<String> tokenList = Arrays.asList(tokenizer.tokenize(message.getText()));
-                return tokenList.stream().map(Token::new).collect(Collectors.toList());
-            }
-        };
+    @Override public List<Token> getTokens(Message message) {
+        Tokenizer tokenizer = getTokenizer(message.getLanguage());
+        if (tokenizer == null) {
+            return null;
+        }
+        List<String> tokenList = Arrays.asList(tokenizer.tokenize(message.getText()));
+        return tokenList.stream().map(Token::new).collect(Collectors.toList());
     }
 
     private Tokenizer getTokenizer(String language) {
